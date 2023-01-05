@@ -1,0 +1,104 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-01-05"
+---
+
+```{r}
+#Gibbs sampler for Bayesian CW
+gibbs.sampler = function(rep,iter){
+  #array to stor all values in
+  sample.array <- array(dim=c(rep,iter))
+  
+  for (k in 1:iter){
+    #initalising vectors to store values of Gibbs sampler at each iteration
+   X1 <- X2 <- NULL
+   #setting initial value 
+   X2[1] <- rnorm(1,0,1)
+
+    #iterative process of Gibbs sampler
+    for (i in 2:(rep+1)){
+      X1[i] <- rnorm(1,0.4*X2[i-1],0.84)
+      X2[i] <- rnorm(1,0.4*X1[i])
+    }
+    
+    X1 <- X1[2:(rep+1)]
+    X2 <- X2[2:(rep+1)]
+    
+    #Calculating evolution of prob that X1 and X2 >0
+    p <- NULL
+    p[1] <- 0
+    for (i in 2:(rep+1)){
+      if (X1[i-1]>=0 && X2[i-1]>=0){
+        temp <- 1
+      }else {
+        temp <- 0
+      }
+      p[i] <- (p[i-1]*(i-1) + temp)/i 
+    }
+    p <- p[2:(rep+1)]
+    
+    sample.array[,k] <- p
+  
+  }
+  
+  return(sample.array)
+}
+p.100 <- gibbs.sampler(4000,100)
+
+
+matplot(p.100,type="l",
+        col="grey")
+
+p.100[4000,]
+
+plot(p.100,type = "l")
+
+ sample.array <- array(dim=c(1,4000,100))
+  sample.array[,1]<-p
+```
+
+```{r}
+#initalising vectors to store values of Gibbs sampler at each iteration
+X1 <- X2 <- NULL
+#setting initial value 
+X2[1] <- rnorm(1,0,1)
+
+#iterative process of Gibbs sampler
+for (i in 2:4001){
+  X1[i] <- rnorm(1,0.4*X2[i-1],0.84)
+  X2[i] <- rnorm(1,0.4*X1[i])
+}
+
+X1 <- X1[2:4001]
+X2 <- X2[2:4001]
+
+#Calculating evolution of prob that X1 and X2 >0
+p <- NULL
+p[1] <- 0
+for (i in 2:4001){
+  if (X1[i-1]>0 && X2[i-1]>0){
+    temp <- 1
+  }else {
+    temp <- 0
+  }
+  p[i] <- (p[i-1]*(i-1) + temp)/i 
+}
+p <- p[2:4001]
+
+plot(X1,type = "l")
+plot(X2,type = "l")
+
+#plotting convergence of prob X1 and X2 >0
+plot(p,type = "l")
+
+acf(X1)
+acf(X2)
+
+hist(X1,breaks = 30)
+hist(X2,breaks = 30)
+```
+
+
+
+
