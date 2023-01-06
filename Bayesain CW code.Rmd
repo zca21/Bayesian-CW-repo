@@ -5,9 +5,73 @@ date: "2023-01-05"
 ---
 
 ```{r}
+setwd("~/Desktop/Baysian Statistics and Likelihood/Bayesian Stuff/Bayesian-CW-repo")
+```
+
+
+```{r}
+set.seed(2023)
+
+#initializing vectors to store values of Gibbs sampler at each iteration
+X1 <- X2 <- NULL
+#setting initial value 
+X2[1] <- rnorm(1,0,1)
+
+#iterative process of Gibbs sampler
+for (i in 2:4001){
+  X1[i] <- rnorm(1,0.4*X2[i-1],0.84)
+  X2[i] <- rnorm(1,0.4*X1[i])
+}
+
+#removing initial value of X2
+X1 <- X1[2:4001]
+X2 <- X2[2:4001]
+
+#Plotting chains
+png(file = "X1 and X2 MCMC chains.png")
+par(mfrow=c(2,1))
+plot(X1,type = "l",
+     xlab = "time",
+     ylab="X1")
+plot(X2,type = "l",
+     xlab="time",
+     ylab="X2")
+dev.off()
+#Appears they have reached stationary from the start (looks like hairy caterpillar)
+
+#Estimating P(X1>0,X2>0) using chains (proportion when both X1 and X2 greater of equal to 0)
+count<-0
+for (i in 1:4000){
+  if (X1[i]>0 && X2[i]>0){
+    count <- count+1
+  }
+}
+P <- count/4000
+#estimated prob is 0.29675
+
+#Calculating evolution of prob that X1 and X2 >=0 (running average of times when both are greater than or equal to 0)
+run.av <- NULL
+count<-0
+for (i in 1:4000){
+  if (X1[i]>0 && X2[i]>0){
+    count <- 1+count
+  }
+  #updating running average
+  run.av[i]<-count/i
+}
+png(file = "running average.png")
+plot(run.av,type = "l",
+     xlab = "time",
+     ylab = "Pr(X1>=0,X2>=0)")
+dev.off()
+```
+
+
+
+```{r}
 #Gibbs sampler for Bayesian CW
 gibbs.sampler = function(rep,iter){
-  #array to stor all values in
+  #array to store all values in
   sample.array <- array(dim=c(rep,iter))
   
   for (k in 1:iter){
@@ -26,77 +90,33 @@ gibbs.sampler = function(rep,iter){
     X2 <- X2[2:(rep+1)]
     
     #Calculating evolution of prob that X1 and X2 >0
-    p <- NULL
-    p[1] <- 0
-    for (i in 2:(rep+1)){
-      if (X1[i-1]>=0 && X2[i-1]>=0){
-        temp <- 1
-      }else {
-        temp <- 0
+    run.av <- NULL
+    count<-0
+    for (i in 1:rep){
+      if (X1[i]>0 && X2[i]>0){
+        count <- 1+count
       }
-      p[i] <- (p[i-1]*(i-1) + temp)/i 
+      #updating running average
+      run.av[i]<-count/i
     }
-    p <- p[2:(rep+1)]
     
-    sample.array[,k] <- p
+    sample.array[,k] <- run.av
   
   }
   
   return(sample.array)
 }
+
 p.100 <- gibbs.sampler(4000,100)
-
-
+png(file = "100 running averages.png")
 matplot(p.100,type="l",
-        col="grey")
-
-p.100[4000,]
-
-plot(p.100,type = "l")
-
- sample.array <- array(dim=c(1,4000,100))
-  sample.array[,1]<-p
-```
-
-```{r}
-#initalising vectors to store values of Gibbs sampler at each iteration
-X1 <- X2 <- NULL
-#setting initial value 
-X2[1] <- rnorm(1,0,1)
-
-#iterative process of Gibbs sampler
-for (i in 2:4001){
-  X1[i] <- rnorm(1,0.4*X2[i-1],0.84)
-  X2[i] <- rnorm(1,0.4*X1[i])
-}
-
-X1 <- X1[2:4001]
-X2 <- X2[2:4001]
-
-#Calculating evolution of prob that X1 and X2 >0
-p <- NULL
-p[1] <- 0
-for (i in 2:4001){
-  if (X1[i-1]>0 && X2[i-1]>0){
-    temp <- 1
-  }else {
-    temp <- 0
-  }
-  p[i] <- (p[i-1]*(i-1) + temp)/i 
-}
-p <- p[2:4001]
-
-plot(X1,type = "l")
-plot(X2,type = "l")
-
-#plotting convergence of prob X1 and X2 >0
-plot(p,type = "l")
-
-acf(X1)
-acf(X2)
-
-hist(X1,breaks = 30)
-hist(X2,breaks = 30)
+        col="grey",
+        xlab="time",
+        ylab="Pr(X1>=0,X2>=0)")
+abline(h=0.29675,col="black") # adding in original estimate
+legend("topright", lty = c(1,1), cex = 0.6, col = c("black","grey"),
+       legend = c("original estimate","replications"))
+dev.off()
 ```
 
 
