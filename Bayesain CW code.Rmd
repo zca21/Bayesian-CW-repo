@@ -39,6 +39,13 @@ plot(X2,type = "l",
 dev.off()
 #Appears they have reached stationary from the start (looks like hairy caterpillar)
 
+#Creating correlogram of the chains
+png(file = "X1 and X2 correlograms.png")
+par(mfrow=c(2,1))
+acf(X1)
+acf(X2)
+dev.off()
+
 #Estimating P(X1>0,X2>0) using chains (proportion when both X1 and X2 greater of equal to 0)
 count<-0
 for (i in 1:4000){
@@ -47,7 +54,7 @@ for (i in 1:4000){
   }
 }
 P <- count/4000
-#estimated prob is 0.29675
+#estimated prob is 0.304
 
 #Calculating evolution of prob that X1 and X2 >=0 (running average of times when both are greater than or equal to 0)
 run.av <- NULL
@@ -99,25 +106,31 @@ gibbs.sampler = function(rep,iter){
       #updating running average
       run.av[i]<-count/i
     }
-    
     sample.array[,k] <- run.av
-  
   }
   
   return(sample.array)
 }
+#Calculating original estimate
+set.seed(2023)
+prob.p <- gibbs.sampler(4000,1000)
+org.est <- mean(prob.p[4000,])
+org.est #value is 0.3157348
 
+set.seed(2023)
 p.100 <- gibbs.sampler(4000,100)
 png(file = "100 running averages.png")
 matplot(p.100,type="l",
         col="grey",
         xlab="time",
         ylab="Pr(X1>=0,X2>=0)")
-abline(h=0.304,col="black") # adding in original estimate
+abline(h=org.est,col="black") # adding in original estimate
 legend("topright", lty = c(1,1), cex = 1, col = c("black","grey"),
        legend = c("original estimate","replications"))
 dev.off()
 ```
+
+
 
 
 
